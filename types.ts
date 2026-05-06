@@ -37,6 +37,16 @@ export interface TenantInfo {
   phone: string;
 }
 
+export interface WorkConfirmation {
+  id: string;
+  timestamp: number;
+  workerName: string;
+  originalDescription: string;
+  translatedDescription: string;
+  signatureUrl: string; // Base64 or Firebase Storage URL
+  language: 'ru' | 'ar';
+}
+
 export interface Unit {
   id: string;
   buildingId: string;
@@ -45,6 +55,7 @@ export interface Unit {
   statuses: Record<Discipline, TaskStatus>;
   history: TaskLog[];
   appointments: Appointment[];
+  workConfirmation?: WorkConfirmation;
 }
 
 export interface Building {

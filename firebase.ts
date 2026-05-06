@@ -1,13 +1,42 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, collection, query, where, onSnapshot, getDocFromServer, Timestamp } from 'firebase/firestore';
-import firebaseConfig from './firebase-applet-config.json';
+import { 
+  initializeFirestore, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  getDocFromServer, 
+  Timestamp,
+  terminate
+} from 'firebase/firestore';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBMBrPn0ypVgYNUYbmK0X1kmkAdrKfod-A",
+  authDomain: "gen-lang-client-0145327151.firebaseapp.com",
+  databaseURL: "https://gen-lang-client-0145327151-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "gen-lang-client-0145327151",
+  storageBucket: "gen-lang-client-0145327151.firebasestorage.app",
+  messagingSenderId: "831027802568",
+  appId: "1:831027802568:web:c41326806cdee18a6550fd",
+  firestoreDatabaseId: "ai-studio-0db8495b-a177-4a01-9076-555c25ef4f60"
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+// Use initializeFirestore with the correct database ID and long polling to bypass websocket issues
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true
+}, firebaseConfig.firestoreDatabaseId);
+
+export const storage = getStorage(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Auth helpers
@@ -17,10 +46,18 @@ export const logout = () => signOut(auth);
 // Test connection
 async function testConnection() {
   try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration. The client is offline.");
+    // Attempting a server read to verify connectivity. 
+    // We use a timeout to avoid hanging if the network is truly blocked.
+    const healthRef = doc(db, '_internal_', 'healthcheck');
+    const promise = getDocFromServer(healthRef);
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Connection timeout")), 5000));
+    
+    await Promise.race([promise, timeout]);
+    console.log("Firebase connection verified.");
+  } catch (error: any) {
+    console.warn("Firestore connection check info:", error.message);
+    if (error.code === 'unavailable' || error.message?.includes('offline')) {
+       console.error("CRITICAL: Firebase is offline or unreachable. Check if the database '" + firebaseConfig.firestoreDatabaseId + "' exists and is active.");
     }
   }
 }

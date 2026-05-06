@@ -77,7 +77,7 @@ const ContractorView: React.FC<Props> = ({ state, lang, onSelectUnit, userRole, 
                     {/* Problematic Units List */}
                     {problematicUnits.length > 0 && (
                       <div className="space-y-2">
-                        <h4 className="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-2">{t.activeTasks} ({problematicUnits.length})</h4>
+                        <h4 className="text-[10px] font-bold text-red-500 uppercase tracking-wider mb-2">{t.activeTask} ({problematicUnits.length})</h4>
                         {problematicUnits.slice(0, 5).map(({ unit, log }) => {
                           const buildingNum = unit.buildingId.split('-')[1];
                           const unitIdParts = unit.id.split('-');

@@ -125,7 +125,18 @@ export const translations = {
     appointmentsPerDay: "פגישות לפי תאריך",
     loadByContractor: "עומס לפי בעל מקצוע",
     totalAppointments: "סה\"כ פגישות",
-    noLoadData: "אין נתוני עומס להצגה"
+    noLoadData: "אין נתוני עומס להצגה",
+    signAndFinish: "חתימה וסיום עבודה",
+    workConfirmationTitle: "אישור סיום עבודה",
+    translateToHebrew: "תרגם לעברית",
+    signaturePadLabel: "חתימת הפועל",
+    clearSignature: "נקה חתימה",
+    confirmAndSave: "אשר ושמור דוח",
+    descriptionInLang: "תיאור העבודה (רוסית/ערבית)",
+    translatedDescriptionLabel: "תיאור מתורגם (עברית)",
+    workerNamePlaceholder: "שם העובד החותם",
+    workerNameField: "שם העובד המבצע",
+    translatingText: "מתרגם טקסט..."
   },
   ru: {
     appName: "Отдел проверки Arazi HaNegev",
@@ -250,7 +261,18 @@ export const translations = {
     appointmentsPerDay: "Встречи по датам",
     loadByContractor: "Нагрузка по подрядчикам",
     totalAppointments: "Всего встреч",
-    noLoadData: "Нет данных для отображения"
+    noLoadData: "Нет данных для отображения",
+    signAndFinish: "Подписать и завершить",
+    workConfirmationTitle: "Подтверждение работ",
+    translateToHebrew: "Перевести на иврит",
+    signaturePadLabel: "Подпись рабочего",
+    clearSignature: "Очистить подпись",
+    confirmAndSave: "Подтвердить и сохранить",
+    descriptionInLang: "Описание работ (Рус/Ар)",
+    translatedDescriptionLabel: "Перевод (Иврит)",
+    workerNamePlaceholder: "Имя подписавшегося",
+    workerNameField: "Имя исполнителя",
+    translatingText: "Перевод текста..."
   },
   ar: {
     appName: "قسم فحص أرازي النقب",
@@ -350,6 +372,7 @@ export const translations = {
     emailLabel: "بريد المهني (للمجدولة في التقويم)",
     sendInvite: "إرسال دعوة للتقويم",
     saveTenantInfo: "حفظ بيانات المستأجر",
+    manageTenants: "إدارة أسماء المستأجرين",
     committeeContactLabel: "لجنة البيت (ועד בית)",
     saveCommittee: "حفظ جهة الاتصال",
     tenantNameField: "اسم المستأجر",
@@ -374,6 +397,17 @@ export const translations = {
     appointmentsPerDay: "المواعيد حسب التاريخ",
     loadByContractor: "الحمل حسب المهني",
     totalAppointments: "إجمالي المواعيد",
-    noLoadData: "لا توجد بيانات أحمال للعرض"
+    noLoadData: "لا توجد بيانات أحمال للعرض",
+    signAndFinish: "توقيع وإنهاء العمل",
+    workConfirmationTitle: "تأكيد انتهاء العمل",
+    translateToHebrew: "الترجمة إلى العبرية",
+    signaturePadLabel: "توقيع العامل",
+    clearSignature: "مسح التوقيع",
+    confirmAndSave: "تأكيد وحفظ التقرير",
+    descriptionInLang: "وصف العمل (روسي/عربي)",
+    translatedDescriptionLabel: "الوصف المترجم (عبري)",
+    workerNamePlaceholder: "اسم العامل الموقع",
+    workerNameField: "اسم العامل المنفذ",
+    translatingText: "جاري ترجمة النص..."
   }
 };

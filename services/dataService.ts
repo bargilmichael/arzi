@@ -2,7 +2,27 @@
 import { ProjectState, Building, Unit, TaskStatus, TaskLog, Discipline, Appointment, TenantInfo } from '../types';
 import { BUILDINGS_COUNT, UNITS_PER_BUILDING } from '../constants';
 
+import { db } from '../firebase';
+import { collection, doc, setDoc, getDocs, onSnapshot, query } from 'firebase/firestore';
+
 const STORAGE_KEY = 'plumbtrack_data_v1';
+
+// We'll add async versions for Firestore
+export const saveUnitToFirestore = async (unit: Unit) => {
+  try {
+    await setDoc(doc(db, 'units', unit.id), unit);
+  } catch (error) {
+    console.error("Error saving unit to Firestore:", error);
+  }
+};
+
+export const saveBuildingToFirestore = async (building: Building) => {
+  try {
+    await setDoc(doc(db, 'buildings', building.id), building);
+  } catch (error) {
+    console.error("Error saving building to Firestore:", error);
+  }
+};
 
 export const initializeData = (): ProjectState => {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -58,11 +78,26 @@ export const updateUnit = (
     updateLogStatus?: { logId: string, newStatus: TaskStatus },
     newAppointment?: Omit<Appointment, 'id' | 'createdAt' | 'isCompleted'>,
     completeAppointmentId?: string,
-    updateTenantInfo?: { name: string, phone: string }
+    updateTenantInfo?: { name: string, phone: string },
+    workConfirmation?: {
+      workerName: string,
+      originalDescription: string,
+      translatedDescription: string,
+      signatureUrl: string,
+      language: 'ru' | 'ar'
+    }
   }
 ): ProjectState => {
   const newState = { ...state };
   const updatedUnit = { ...unit };
+
+  if (updates.workConfirmation) {
+    updatedUnit.workConfirmation = {
+      ...updates.workConfirmation,
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp: Date.now()
+    };
+  }
 
   if (updates.updateTenantInfo) {
     updatedUnit.tenantInfo = updates.updateTenantInfo;
@@ -116,6 +151,7 @@ export const updateUnit = (
 
   newState.units[unit.id] = updatedUnit;
   saveData(newState);
+  saveUnitToFirestore(updatedUnit); // Async fire-and-forget sync
   return newState;
 };
 
@@ -125,9 +161,14 @@ export const updateBuilding = (
   updates: { committeeContact?: TenantInfo }
 ): ProjectState => {
   const newState = { ...state };
-  newState.buildings = newState.buildings.map(b => 
-    b.id === buildingId ? { ...b, ...updates } : b
-  );
+  newState.buildings = newState.buildings.map(b => {
+    if (b.id === buildingId) {
+      const updated = { ...b, ...updates };
+      saveBuildingToFirestore(updated); // Sync to firestore
+      return updated;
+    }
+    return b;
+  });
   saveData(newState);
   return newState;
 };

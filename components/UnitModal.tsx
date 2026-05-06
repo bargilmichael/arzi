@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Unit, TaskStatus, Discipline, Appointment, TaskLog } from '../types';
+import { Unit, TaskStatus, Discipline, Appointment, TaskLog, WorkConfirmation } from '../types';
 import { STATUS_CONFIG, PUBLIC_AREAS, CONTRACTORS } from '../constants';
 import { Language, translations } from '../translations';
+import WorkConfirmationModal from './WorkConfirmationModal';
 
 interface Props {
   unit: Unit;
@@ -12,7 +13,14 @@ interface Props {
     updateLogStatus?: { logId: string, newStatus: TaskStatus },
     newAppointment?: Omit<Appointment, 'id' | 'createdAt' | 'isCompleted'>,
     completeAppointmentId?: string,
-    updateTenantInfo?: { name: string, phone: string }
+    updateTenantInfo?: { name: string, phone: string },
+    workConfirmation?: {
+      workerName: string,
+      originalDescription: string,
+      translatedDescription: string,
+      signatureUrl: string,
+      language: 'ru' | 'ar'
+    }
   }) => void;
   lang: Language;
   activeDiscipline: Discipline;
@@ -50,6 +58,8 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
   const [visitSummary, setVisitSummary] = useState('');
   const [needsFollowup, setNeedsFollowup] = useState(false);
   const [followupContractorId, setFollowupContractorId] = useState(CONTRACTORS[1].id); // Default to workers
+  
+  const [isSignModalOpen, setIsSignModalOpen] = useState(false);
 
   const t = translations[lang];
   const canEdit = userRole === 'admin' || userRole === 'contractor';
@@ -218,6 +228,11 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
     setIsEditingTenant(false);
   };
 
+  const handleWorkConfirmation = (data: any) => {
+    onSave({ workConfirmation: data });
+    setIsSignModalOpen(false);
+  };
+
   const unitIdentifier = unit.id.split('-').slice(1).join('-');
   const isPublicArea = isNaN(Number(unitIdentifier));
   const publicAreaConfig = isPublicArea ? PUBLIC_AREAS.find(a => a.id === unitIdentifier) : null;
@@ -285,7 +300,47 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
                 <div className="space-y-4">
                   <div className="flex items-center justify-between px-2">
                     <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">{t.activeTask}</h4>
+                    {canEdit && (
+                       <button 
+                         onClick={() => setIsSignModalOpen(true)}
+                         className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-black shadow-lg hover:bg-blue-700 transition-all hover:scale-105"
+                       >
+                         🖋️ {t.signAndFinish}
+                       </button>
+                    )}
                   </div>
+
+                  {unit.workConfirmation && (
+                    <div className="bg-green-50 border-2 border-green-500 rounded-[2.5rem] p-6 shadow-lg animate-in fade-in zoom-in-95">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center text-2xl border-2 border-green-200">✅</div>
+                          <div>
+                            <span className="font-black text-green-900 text-lg block leading-tight">{t.workConfirmationTitle}</span>
+                            <span className="text-[10px] text-green-600 font-black uppercase">{unit.workConfirmation.workerName}</span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-gray-400 font-black">{new Date(unit.workConfirmation.timestamp).toLocaleDateString()}</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                           <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{t.descriptionInLang}</label>
+                           <p className="text-xs font-bold text-gray-600 bg-white/50 p-3 rounded-xl border border-green-100">{unit.workConfirmation.originalDescription}</p>
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[9px] font-black text-green-600 uppercase tracking-widest">{t.translatedDescriptionLabel}</label>
+                           <p className="text-xs font-black text-green-800 bg-white p-3 rounded-xl border border-green-200">{unit.workConfirmation.translatedDescription}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-green-100 flex justify-center">
+                        <div className="bg-white p-2 rounded-2xl border border-green-200 shadow-inner">
+                          <img src={unit.workConfirmation.signatureUrl} alt="Signature" className="h-20 object-contain" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {activeTasks.map(task => (
                     <div key={task.id} className="bg-white border-2 border-blue-500 rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden ring-8 ring-blue-500/5">
                       <div className="absolute top-0 left-0 w-3 h-full bg-blue-600"></div>
@@ -584,6 +639,15 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
           )}
         </div>
       </div>
+
+      {isSignModalOpen && (
+        <WorkConfirmationModal 
+          lang={lang} 
+          unitId={unit.id}
+          onClose={() => setIsSignModalOpen(false)}
+          onConfirm={handleWorkConfirmation}
+        />
+      )}
     </div>
   );
 };

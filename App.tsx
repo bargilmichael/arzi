@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ProjectState, TaskStatus, Unit, Discipline, Appointment } from './types';
+import { ProjectState, TaskStatus, Unit, Discipline, Appointment, Building } from './types';
 import { initializeData, getUnit, updateUnit, updateBuilding } from './services/dataService';
 import BuildingSelector from './components/BuildingSelector';
 import BuildingCommittee from './components/BuildingCommittee';
@@ -12,7 +12,7 @@ import UserManagement from './components/UserManagement';
 import Login from './components/Login';
 import LanguageSelector from './components/LanguageSelector';
 import { auth, onAuthStateChanged, logout, FirebaseUser, db } from './firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, collection } from 'firebase/firestore';
 import { Language, translations } from './translations';
 import { PUBLIC_AREAS, STATUS_CONFIG } from './constants';
 
@@ -40,6 +40,45 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => {
     return (localStorage.getItem('app_lang') as Language) || 'he';
   });
+
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubUnits = onSnapshot(collection(db, 'units'), (snapshot) => {
+      const unitsData: Record<string, Unit> = {};
+      snapshot.forEach(doc => {
+        unitsData[doc.id] = doc.data() as Unit;
+      });
+      if (snapshot.size > 0) {
+        setState(prev => ({
+          ...prev,
+          units: { ...prev.units, ...unitsData }
+        }));
+      }
+    });
+
+    const unsubBuildings = onSnapshot(collection(db, 'buildings'), (snapshot) => {
+      const buildingsData: Building[] = [];
+      snapshot.forEach(doc => {
+        buildingsData.push(doc.data() as Building);
+      });
+      
+      if (buildingsData.length > 0) {
+        setState(prev => {
+          const newBuildings = prev.buildings.map(b => {
+             const found = buildingsData.find(fb => fb.id === b.id);
+             return found ? found : b;
+          });
+          return { ...prev, buildings: newBuildings };
+        });
+      }
+    });
+
+    return () => {
+      unsubUnits();
+      unsubBuildings();
+    };
+  }, [user]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -125,7 +164,14 @@ const App: React.FC = () => {
     updateLogStatus?: { logId: string, newStatus: TaskStatus },
     newAppointment?: Omit<Appointment, 'id' | 'createdAt' | 'isCompleted'>,
     completeAppointmentId?: string,
-    updateTenantInfo?: { name: string, phone: string }
+    updateTenantInfo?: { name: string, phone: string },
+    workConfirmation?: {
+      workerName: string,
+      originalDescription: string,
+      translatedDescription: string,
+      signatureUrl: string,
+      language: 'ru' | 'ar'
+    }
   }) => {
     if (!activeUnit) return;
     const newState = updateUnit(state, activeUnit, {
@@ -133,7 +179,8 @@ const App: React.FC = () => {
       updateLogStatus: updates.updateLogStatus,
       newAppointment: updates.newAppointment,
       completeAppointmentId: updates.completeAppointmentId,
-      updateTenantInfo: updates.updateTenantInfo
+      updateTenantInfo: updates.updateTenantInfo,
+      workConfirmation: updates.workConfirmation
     });
     setState(newState);
   };

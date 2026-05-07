@@ -12,9 +12,11 @@ import UserManagement from './components/UserManagement';
 import Login from './components/Login';
 import LanguageSelector from './components/LanguageSelector';
 import { auth, onAuthStateChanged, logout, FirebaseUser, db } from './firebase';
-import { doc, getDoc, setDoc, onSnapshot, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, collection, deleteDoc } from 'firebase/firestore';
 import { Language, translations } from './translations';
 import { PUBLIC_AREAS, STATUS_CONFIG } from './constants';
+
+const ADMIN_EMAIL = 'bargil.michael@gmail.com';
 
 const Logo = () => (
   <svg width="140" height="50" viewBox="0 0 200 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-sm">
@@ -83,64 +85,72 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        // Sync user to Firestore
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        
-        if (!userSnap.exists()) {
-          // Check if there's a pre-added user by email
-          const emailRef = doc(db, 'users', currentUser.email?.toLowerCase() || '');
-          const emailSnap = await getDoc(emailRef);
+      try {
+        if (currentUser && currentUser.email) {
+          const userEmail = currentUser.email.toLowerCase();
+          const userRef = doc(db, 'users', currentUser.uid);
+          const userSnap = await getDoc(userRef);
           
-          if (emailSnap.exists() && !emailSnap.data().uid) {
-            // User was pre-added. Claim the document by moving it to UID-based ID.
-            const preData = emailSnap.data();
-            const finalRole = currentUser.email === 'bargil.michael@gmail.com' ? 'admin' : (preData.role || 'viewer');
+          if (!userSnap.exists()) {
+            // Check if there's a pre-added user by email
+            const emailRef = doc(db, 'users', userEmail);
+            const emailSnap = await getDoc(emailRef);
             
-            await setDoc(userRef, {
-              uid: currentUser.uid,
-              email: currentUser.email,
-              displayName: currentUser.displayName,
-              role: finalRole,
-              discipline: preData.discipline || 'all'
-            });
-            
-            // Delete the temporary email-based document
-            const { deleteDoc } = await import('firebase/firestore');
-            await deleteDoc(emailRef);
-            
-            setUserRole(finalRole);
-            setUserDiscipline(preData.discipline || 'all');
-            setIsAuthorized(true);
-          } else if (currentUser.email === 'bargil.michael@gmail.com') {
-            // Standard new user logic for ADMIN only
-            const defaultRole = 'admin';
-            const defaultDiscipline = 'all';
-            await setDoc(userRef, {
-              uid: currentUser.uid,
-              email: currentUser.email,
-              displayName: currentUser.displayName,
-              role: defaultRole,
-              discipline: defaultDiscipline
-            });
-            setUserRole(defaultRole);
-            setUserDiscipline(defaultDiscipline);
-            setIsAuthorized(true);
+            if (emailSnap.exists() && !emailSnap.data().uid) {
+              const preData = emailSnap.data();
+              const finalRole = userEmail === ADMIN_EMAIL ? 'admin' : (preData.role || 'viewer');
+              
+              await setDoc(userRef, {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                displayName: currentUser.displayName || currentUser.email.split('@')[0],
+                role: finalRole,
+                discipline: preData.discipline || 'all'
+              });
+              
+              await deleteDoc(emailRef);
+              
+              setUserRole(finalRole);
+              setUserDiscipline(preData.discipline || 'all');
+              setIsAuthorized(true);
+            } else if (userEmail === ADMIN_EMAIL) {
+              const defaultRole = 'admin';
+              const defaultDiscipline = 'all';
+              await setDoc(userRef, {
+                uid: currentUser.uid,
+                email: currentUser.email,
+                displayName: currentUser.displayName || currentUser.email.split('@')[0],
+                role: defaultRole,
+                discipline: defaultDiscipline
+              });
+              setUserRole(defaultRole);
+              setUserDiscipline(defaultDiscipline);
+              setIsAuthorized(true);
+            } else {
+              setIsAuthorized(false);
+            }
           } else {
-            // NOT AUTHORIZED - Do not create document, do not allow access
-            setIsAuthorized(false);
+            const data = userSnap.data();
+            const role = userEmail === ADMIN_EMAIL ? 'admin' : data.role;
+            setUserRole(role);
+            setUserDiscipline(data.discipline || 'all');
+            setIsAuthorized(true);
           }
+        } else if (currentUser && !currentUser.email) {
+          // This should rarely happen with Google login, but for safety:
+          setIsAuthorized(false);
         } else {
-          const data = userSnap.data();
-          // Force admin role for the primary account
-          const role = currentUser.email === 'bargil.michael@gmail.com' ? 'admin' : data.role;
-          setUserRole(role);
-          setUserDiscipline(data.discipline || 'all');
-          setIsAuthorized(true);
+          setIsAuthorized(null);
         }
-      } else {
-        setIsAuthorized(null);
+      } catch (error) {
+        console.error("Auth error:", error);
+        // Fallback to true if it's the admin, just in case Firestore is being flaky
+        if (currentUser?.email?.toLowerCase() === ADMIN_EMAIL) {
+          setUserRole('admin');
+          setIsAuthorized(true);
+        } else {
+          setIsAuthorized(false);
+        }
       }
       setUser(currentUser);
       setIsAuthReady(true);
@@ -154,7 +164,7 @@ const App: React.FC = () => {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const t = translations[lang];
+  const t = translations[lang] || translations.he;
 
   useEffect(() => {
     if (!selectedBuildingId && state.buildings.length > 0) {
@@ -209,7 +219,7 @@ const App: React.FC = () => {
     setViewMode('units');
   };
 
-  const isAdmin = user?.email === 'bargil.michael@gmail.com';
+  const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL;
 
   if (!isAuthReady) {
     return (

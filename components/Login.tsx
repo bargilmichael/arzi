@@ -10,7 +10,22 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ lang, setLang }) => {
-  const t = translations[lang];
+  const [error, setError] = React.useState<string | null>(null);
+  const t = translations[lang] || translations.he;
+
+  const handleLogin = async () => {
+    try {
+      setError(null);
+      await loginWithGoogle();
+    } catch (err: any) {
+      console.error("Login Error:", err);
+      if (err.code === 'auth/popup-blocked') {
+        setError(lang === 'he' ? 'הפופ-אפ נחסם על ידי הדפדפן. נא אפשר פופ-אפים לאתר זה.' : 'Popup blocked by browser. Please allow popups for this site.');
+      } else {
+        setError(err.message || String(err));
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4" dir={(lang === 'he' || lang === 'ar') ? 'rtl' : 'ltr'}>
@@ -30,10 +45,16 @@ const Login: React.FC<LoginProps> = ({ lang, setLang }) => {
         </div>
         
         <h1 className="text-2xl font-black text-blue-900 mb-2">{t.appName}</h1>
-        <p className="text-sm text-gray-500 mb-8 uppercase tracking-widest font-bold">{t.appSubName}</p>
+        <p className="text-sm text-gray-500 mb-4 uppercase tracking-widest font-bold">{t.appSubName}</p>
         
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100">
+            {error}
+          </div>
+        )}
+
         <button 
-          onClick={loginWithGoogle}
+          onClick={handleLogin}
           className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-100 hover:border-blue-500 hover:bg-blue-50 py-4 rounded-2xl font-black text-gray-700 transition-all active:scale-95 shadow-sm"
         >
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" />

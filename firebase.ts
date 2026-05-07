@@ -8,7 +8,7 @@ import {
 import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBMBrPn0ypVgyNUYbmK0X1kmkAdrKfod-A",
+  apiKey: "AIzaSyBMBrPn0ypVgYNUYbmK0X1kmkAdrKfod-A",
   authDomain: "gen-lang-client-0145327151.firebaseapp.com",
   projectId: "gen-lang-client-0145327151",
   storageBucket: "gen-lang-client-0145327151.firebasestorage.app",

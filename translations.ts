@@ -136,7 +136,8 @@ export const translations = {
     translatedDescriptionLabel: "תיאור מתורגם (עברית)",
     workerNamePlaceholder: "שם העובד החותם",
     workerNameField: "שם העובד המבצע",
-    translatingText: "מתרגם טקסט..."
+    translatingText: "מתרגם טקסט...",
+    waitingForManager: "אין משימות פתוחות לדירה זו. ממתין למנהל עבודה שיפתח משימה."
   },
   ru: {
     appName: "Отдел проверки Arazi HaNegev",
@@ -272,7 +273,8 @@ export const translations = {
     translatedDescriptionLabel: "Перевод (Иврит)",
     workerNamePlaceholder: "Имя подписавшегося",
     workerNameField: "Имя исполнителя",
-    translatingText: "Перевод текста..."
+    translatingText: "Перевод текста...",
+    waitingForManager: "Для этой квартиры нет открытых задач. Ожидание открытия задачи прорабом."
   },
   ar: {
     appName: "قسم فحص أرازي النقب",
@@ -408,6 +410,7 @@ export const translations = {
     translatedDescriptionLabel: "الوصف المترجم (عبري)",
     workerNamePlaceholder: "اسم العامل الموقع",
     workerNameField: "اسم العامل المنفذ",
-    translatingText: "جاري ترجمة النص..."
+    translatingText: "جاري ترجمة النص...",
+    waitingForManager: "لا توجد مهام مفتوحة لهذه الشقة. بانتظار مدير العمل لفتح مهمة."
   }
 };

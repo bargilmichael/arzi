@@ -76,6 +76,8 @@ export const updateUnit = (
   updates: { 
     newLog?: Omit<TaskLog, 'id' | 'timestamp'>,
     updateLogStatus?: { logId: string, newStatus: TaskStatus },
+    deleteLogId?: string,
+    editLog?: TaskLog,
     newAppointment?: Omit<Appointment, 'id' | 'createdAt' | 'isCompleted'>,
     completeAppointmentId?: string,
     updateTenantInfo?: { name: string, phone: string },
@@ -101,6 +103,38 @@ export const updateUnit = (
 
   if (updates.updateTenantInfo) {
     updatedUnit.tenantInfo = updates.updateTenantInfo;
+  }
+
+  if (updates.deleteLogId) {
+    const logToDelete = updatedUnit.history.find(l => l.id === updates.deleteLogId);
+    if (logToDelete) {
+      updatedUnit.history = updatedUnit.history.filter(l => l.id !== updates.deleteLogId);
+      
+      // Recalculate status for this discipline
+      const remainingLogsForDiscipline = updatedUnit.history
+        .filter(l => l.discipline === logToDelete.discipline)
+        .sort((a, b) => b.timestamp - a.timestamp);
+      
+      const newStatus = remainingLogsForDiscipline.length > 0 
+        ? remainingLogsForDiscipline[0].status 
+        : TaskStatus.NOT_STARTED;
+        
+      updatedUnit.statuses = {
+        ...updatedUnit.statuses,
+        [logToDelete.discipline]: newStatus
+      };
+    }
+  }
+
+  if (updates.editLog) {
+    updatedUnit.history = updatedUnit.history.map(log => 
+      log.id === updates.editLog?.id ? { ...updates.editLog } : log
+    );
+    // Update status to match the potentially new status/discipline
+    updatedUnit.statuses = {
+      ...updatedUnit.statuses,
+      [updates.editLog.discipline]: updates.editLog.status
+    };
   }
 
   if (updates.updateLogStatus) {

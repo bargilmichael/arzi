@@ -11,6 +11,8 @@ interface Props {
   onSave: (updates: { 
     newLog?: { status: TaskStatus, workerName: string, contractor: string, description: string, discipline: Discipline, images?: string[] },
     updateLogStatus?: { logId: string, newStatus: TaskStatus },
+    deleteLogId?: string,
+    editLog?: { id: string, status: TaskStatus, workerName: string, contractor: string, description: string, discipline: Discipline, images?: string[] },
     newAppointment?: Omit<Appointment, 'id' | 'createdAt' | 'isCompleted'>,
     completeAppointmentId?: string,
     updateTenantInfo?: { name: string, phone: string },
@@ -63,6 +65,7 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
 
   const t = translations[lang];
   const canEdit = userRole === 'admin' || userRole === 'contractor';
+  const isAdmin = userRole === 'admin';
   const isRestricted = userRole === 'contractor' && activeDiscipline !== 'general';
 
   const filteredHistory = isRestricted 
@@ -70,6 +73,7 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
     : unit.history;
 
   const activeTasks = filteredHistory.filter(log => log.status !== TaskStatus.DONE);
+  const canAddReport = isAdmin || (userRole === 'contractor' && activeTasks.length > 0);
   const upcomingAppointments = unit.appointments.filter(app => !app.isCompleted);
 
   const handleQuickStatusUpdate = (logId: string, newStatus: TaskStatus) => {
@@ -112,45 +116,61 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
 
     const selectedContractorLabel = (t as any)[CONTRACTORS.find(c => c.id === contractor)?.labelKey || ''];
     
-    const updates: any = { 
-      newLog: { 
-        status, 
-        workerName: worker, 
-        contractor: selectedContractorLabel, 
-        description: desc, 
-        discipline, 
-        images: selectedImages.length > 0 ? selectedImages : undefined 
-      } 
-    };
-
-    // Sync with calendar if it's a manager (Foreman) task
-    if (contractor === 'manager') {
-      const today = new Date().toISOString().split('T')[0];
-      const now = new Date().toTimeString().split(' ')[0].substring(0, 5);
-      updates.newAppointment = {
-        date: today,
-        time: now,
-        tenantName: displayName,
-        contractor: selectedContractorLabel,
-        contractorEmail: reportEmail,
-        notes: desc
+    if (editingLogId) {
+      onSave({
+        editLog: {
+          id: editingLogId,
+          status,
+          workerName: worker,
+          contractor: selectedContractorLabel,
+          description: desc,
+          discipline,
+          images: selectedImages.length > 0 ? selectedImages : undefined
+        }
+      });
+      setEditingLogId(null);
+    } else {
+      const updates: any = { 
+        newLog: { 
+          status, 
+          workerName: worker, 
+          contractor: selectedContractorLabel, 
+          description: desc, 
+          discipline, 
+          images: selectedImages.length > 0 ? selectedImages : undefined 
+        } 
       };
 
-      if (reportEmail) {
-        const title = encodeURIComponent(`${t.appName}: ${displayName}`);
-        const details = encodeURIComponent(`${t.building}: ${unit.buildingId.split('-')[1]}, ${t.unitLabel}: ${unit.id.split('-')[1]}\n${t.workerName}: ${worker}\n${t.whatWasDone}: ${desc}`);
-        const dateStr = today.replace(/-/g, '');
-        const timeStr = now.replace(/:/g, '') + '00';
-        const endTimeStr = (Number(timeStr) + 10000).toString().padStart(6, '0');
-        
-        const gCalUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${dateStr}T${timeStr}/${dateStr}T${endTimeStr}`;
-        const body = encodeURIComponent(`${t.newReport} (${t.contractor_manager}):\n${t.dateLabel}: ${today}\n${t.timeLabel}: ${now}\n${t.building}: ${unit.buildingId.split('-')[1]}\n${t.whatWasDone}: ${desc}\n\n${lang === 'he' ? 'להוספה ליומן לחץ כאן' : lang === 'ru' ? 'Нажмите здесь, чтобы добавить في التقويم' : 'اضغط هنا للإضافة إلى التقويم'}:\n${gCalUrl}`);
-        
-        window.location.href = `mailto:${reportEmail}?subject=${title}&body=${body}`;
+      // Sync with calendar if it's a manager (Foreman) task
+      if (contractor === 'manager') {
+        const today = new Date().toISOString().split('T')[0];
+        const now = new Date().toTimeString().split(' ')[0].substring(0, 5);
+        updates.newAppointment = {
+          date: today,
+          time: now,
+          tenantName: displayName,
+          contractor: selectedContractorLabel,
+          contractorEmail: reportEmail,
+          notes: desc
+        };
+
+        if (reportEmail) {
+          const title = encodeURIComponent(`${t.appName}: ${displayName}`);
+          const details = encodeURIComponent(`${t.building}: ${unit.buildingId.split('-')[1]}, ${t.unitLabel}: ${unit.id.split('-')[1]}\n${t.workerName}: ${worker}\n${t.whatWasDone}: ${desc}`);
+          const dateStr = today.replace(/-/g, '');
+          const timeStr = now.replace(/:/g, '') + '00';
+          const endTimeStr = (Number(timeStr) + 10000).toString().padStart(6, '0');
+          
+          const gCalUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${dateStr}T${timeStr}/${dateStr}T${endTimeStr}`;
+          const body = encodeURIComponent(`${t.newReport} (${t.contractor_manager}):\n${t.dateLabel}: ${today}\n${t.timeLabel}: ${now}\n${t.building}: ${unit.buildingId.split('-')[1]}\n${t.whatWasDone}: ${desc}\n\n${lang === 'he' ? 'להוספה ליומן לחץ כאן' : lang === 'ru' ? 'Нажмите здесь, чтобы добавить في التقويم' : 'اضغط هنا للإضافة إلى التقويم'}:\n${gCalUrl}`);
+          
+          window.location.href = `mailto:${reportEmail}?subject=${title}&body=${body}`;
+        }
       }
+
+      onSave(updates);
     }
 
-    onSave(updates);
     setWorker(''); setDesc(''); setSelectedImages([]); setStatus(TaskStatus.DONE); setReportEmail(''); setActiveTab('history');
   };
 
@@ -233,6 +253,28 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
     setIsSignModalOpen(false);
   };
 
+  const handleEditHistoryLog = (log: TaskLog) => {
+    setEditingLogId(log.id);
+    setWorker(log.workerName);
+    setDesc(log.description);
+    setStatus(log.status);
+    setSelectedImages(log.images || []);
+    
+    // Find contractor ID by label
+    const contractorMatch = CONTRACTORS.find(c => (t as any)[c.labelKey] === log.contractor);
+    if (contractorMatch) {
+      setContractor(contractorMatch.id);
+    }
+    
+    setActiveTab('report');
+  };
+
+  const handleDeleteHistoryLog = (logId: string) => {
+    if (confirm(lang === 'he' ? 'האם אתה בטוח שברצונך למחוק דיווח זה?' : 'Are you sure you want to delete this report?')) {
+      onSave({ deleteLogId: logId });
+    }
+  };
+
   const unitIdentifier = unit.id.split('-').slice(1).join('-');
   const isPublicArea = isNaN(Number(unitIdentifier));
   const publicAreaConfig = isPublicArea ? PUBLIC_AREAS.find(a => a.id === unitIdentifier) : null;
@@ -288,7 +330,7 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
         <div className="flex bg-white border-b sticky top-0 z-10">
           <button onClick={() => setActiveTab('history')} className={`flex-1 py-4 font-black text-xs md:text-sm transition-all border-b-4 ${activeTab === 'history' ? 'text-blue-600 border-blue-600 bg-blue-50/30' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>📜 {t.viewHistory}</button>
           <button onClick={() => setActiveTab('schedule')} className={`flex-1 py-4 font-black text-xs md:text-sm transition-all border-b-4 ${activeTab === 'schedule' ? 'text-blue-600 border-blue-600 bg-blue-50/30' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>📅 {t.viewSchedule}</button>
-          {canEdit && (
+          {canAddReport && (
             <button onClick={() => setActiveTab('report')} className={`flex-1 py-4 font-black text-xs md:text-sm transition-all border-b-4 ${activeTab === 'report' ? 'text-blue-600 border-blue-600 bg-blue-50/30' : 'text-gray-400 border-transparent hover:text-gray-600'}`}>➕ {t.newReport}</button>
           )}
         </div>
@@ -380,10 +422,15 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
               ) : unit.history.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
                   <div className="text-6xl mb-6 opacity-20 grayscale">🏗️</div>
-                  {canEdit && (
+                  {isAdmin && (
                     <button onClick={handleStartWork} className="bg-blue-600 text-white px-10 py-6 rounded-[2rem] text-xl font-black shadow-2xl hover:bg-blue-700 active:scale-95 transition-all">
                       {lang === 'he' ? '🚀 פתח משימה חדשה לביצוע' : lang === 'ru' ? '🚀 Открыть новую задачу' : '🚀 فتح مهمة تنفيذ جديدة'}
                     </button>
+                  )}
+                  {userRole === 'contractor' && (
+                    <p className="text-gray-400 font-bold px-8">
+                       {(t as any).waitingForManager}
+                    </p>
                   )}
                 </div>
               ) : null}
@@ -397,7 +444,27 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-center">
                              <span className="font-black text-blue-900 truncate text-lg">{log.workerName}</span>
-                             <span className="text-[10px] text-gray-300 font-black bg-gray-50 px-2 py-1 rounded-lg">{new Date(log.timestamp).toLocaleDateString()}</span>
+                             <div className="flex items-center gap-2">
+                               {isAdmin && (
+                                 <div className="flex items-center gap-1">
+                                    <button 
+                                      onClick={() => handleEditHistoryLog(log)} 
+                                      className="p-1.5 hover:bg-blue-50 rounded-lg text-blue-400 hover:text-blue-600 transition-colors"
+                                      title={lang === 'he' ? 'ערוך' : 'Edit'}
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteHistoryLog(log.id)} 
+                                      className="p-1.5 hover:bg-red-50 rounded-lg text-red-300 hover:text-red-500 transition-colors"
+                                      title={lang === 'he' ? 'מחק' : 'Delete'}
+                                    >
+                                      🗑️
+                                    </button>
+                                 </div>
+                               )}
+                               <span className="text-[10px] text-gray-300 font-black bg-gray-50 px-2 py-1 rounded-lg">{new Date(log.timestamp).toLocaleDateString()}</span>
+                             </div>
                           </div>
                           <span className="text-[10px] text-gray-400 font-bold uppercase">{log.contractor}</span>
                         </div>
@@ -516,7 +583,7 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
                     <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.notesLabel}</label>
                     <textarea value={appNotes} onChange={e => setAppNotes(e.target.value)} disabled={!canEdit} rows={2} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none resize-none font-bold bg-white shadow-sm disabled:opacity-50" />
                   </div>
-                  {canEdit && <button type="submit" className="md:col-span-2 bg-yellow-500 text-white font-black py-6 rounded-3xl hover:bg-yellow-600 transition-all shadow-xl active:scale-95 text-lg">{t.addAppointment}</button>}
+                  {isAdmin && <button type="submit" className="md:col-span-2 bg-yellow-500 text-white font-black py-6 rounded-3xl hover:bg-yellow-600 transition-all shadow-xl active:scale-95 text-lg">{t.addAppointment}</button>}
                 </form>
               </section>
             </div>
@@ -577,7 +644,22 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
               )}
 
               <section className="bg-blue-50/40 p-8 rounded-[3rem] border-2 border-blue-100 shadow-inner">
-                <h4 className="text-md font-black text-blue-800 mb-8 uppercase tracking-[0.3em] text-center border-b-2 pb-6 border-blue-100/50">🚀 {t.newReport}</h4>
+                <div className="flex items-center justify-center relative border-b-2 pb-6 border-blue-100/50 mb-8">
+                  <h4 className="text-md font-black text-blue-800 uppercase tracking-[0.3em]">
+                    {editingLogId ? (lang === 'he' ? '✍️ עריכת דיווח' : '✍️ Edit Report') : `🚀 ${t.newReport}`}
+                  </h4>
+                  {editingLogId && (
+                    <button 
+                      onClick={() => {
+                        setEditingLogId(null);
+                        setWorker(''); setDesc(''); setSelectedImages([]); setStatus(TaskStatus.DONE);
+                      }}
+                      className="absolute right-0 text-xs font-black text-red-500 bg-red-50 px-3 py-1.5 rounded-xl hover:bg-red-100 transition-all border border-red-100"
+                    >
+                      {lang === 'he' ? 'בטל עריכה' : 'Cancel Edit'}
+                    </button>
+                  )}
+                </div>
                 <form onSubmit={handleReportSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <label className="text-[11px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.contractorLabel}</label>
@@ -632,7 +714,9 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
                     <label className="text-[11px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.whatWasDone}</label>
                     <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={4} className="w-full px-6 py-5 rounded-[2.5rem] border-2 border-gray-100 focus:border-blue-500 outline-none resize-none font-bold shadow-sm text-lg placeholder:opacity-20" placeholder={t.descriptionPlaceholder} />
                   </div>
-                  <button type="submit" className="md:col-span-2 bg-blue-600 text-white font-black py-7 rounded-[2rem] hover:bg-blue-700 transition-all shadow-2xl active:scale-95 text-2xl tracking-[0.2em]">{t.updateButton}</button>
+                  <button type="submit" className="md:col-span-2 bg-blue-600 text-white font-black py-7 rounded-[2rem] hover:bg-blue-700 transition-all shadow-2xl active:scale-95 text-2xl tracking-[0.2em]">
+                    {editingLogId ? (lang === 'he' ? 'שמור שינויים' : 'Save Changes') : t.updateButton}
+                  </button>
                 </form>
               </section>
             </div>

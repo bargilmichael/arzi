@@ -162,6 +162,8 @@ const App: React.FC = () => {
   const handleUpdateUnit = (updates: { 
     newLog?: { status: TaskStatus, workerName: string, contractor: string, description: string, discipline: Discipline, images?: string[] },
     updateLogStatus?: { logId: string, newStatus: TaskStatus },
+    deleteLogId?: string,
+    editLog?: any,
     newAppointment?: Omit<Appointment, 'id' | 'createdAt' | 'isCompleted'>,
     completeAppointmentId?: string,
     updateTenantInfo?: { name: string, phone: string },
@@ -177,6 +179,8 @@ const App: React.FC = () => {
     const newState = updateUnit(state, activeUnit, {
       newLog: updates.newLog,
       updateLogStatus: updates.updateLogStatus,
+      deleteLogId: updates.deleteLogId,
+      editLog: updates.editLog,
       newAppointment: updates.newAppointment,
       completeAppointmentId: updates.completeAppointmentId,
       updateTenantInfo: updates.updateTenantInfo,

@@ -30,6 +30,7 @@ const App: React.FC = () => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [userRole, setUserRole] = useState<'admin' | 'contractor' | 'viewer'>('viewer');
   const [userDiscipline, setUserDiscipline] = useState<string>('all');
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [state, setState] = useState<ProjectState>(() => initializeData());
   const [selectedBuildingId, setSelectedBuildingId] = useState<string | null>(null);
@@ -111,9 +112,10 @@ const App: React.FC = () => {
             
             setUserRole(finalRole);
             setUserDiscipline(preData.discipline || 'all');
-          } else {
-            // Standard new user logic
-            const defaultRole = currentUser.email === 'bargil.michael@gmail.com' ? 'admin' : 'viewer';
+            setIsAuthorized(true);
+          } else if (currentUser.email === 'bargil.michael@gmail.com') {
+            // Standard new user logic for ADMIN only
+            const defaultRole = 'admin';
             const defaultDiscipline = 'all';
             await setDoc(userRef, {
               uid: currentUser.uid,
@@ -124,6 +126,10 @@ const App: React.FC = () => {
             });
             setUserRole(defaultRole);
             setUserDiscipline(defaultDiscipline);
+            setIsAuthorized(true);
+          } else {
+            // NOT AUTHORIZED - Do not create document, do not allow access
+            setIsAuthorized(false);
           }
         } else {
           const data = userSnap.data();
@@ -131,7 +137,10 @@ const App: React.FC = () => {
           const role = currentUser.email === 'bargil.michael@gmail.com' ? 'admin' : data.role;
           setUserRole(role);
           setUserDiscipline(data.discipline || 'all');
+          setIsAuthorized(true);
         }
+      } else {
+        setIsAuthorized(null);
       }
       setUser(currentUser);
       setIsAuthReady(true);
@@ -212,6 +221,30 @@ const App: React.FC = () => {
 
   if (!user) {
     return <Login lang={lang} setLang={setLang} />;
+  }
+
+  if (isAuthorized === false) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 text-center" dir={(lang === 'he' || lang === 'ar') ? 'rtl' : 'ltr'}>
+        <div className="bg-white p-12 rounded-[3rem] shadow-2xl border border-red-100 max-w-md w-full">
+          <div className="text-8xl mb-8 animate-bounce">🚫</div>
+          <h1 className="text-3xl font-black text-red-600 mb-4">{(t as any).unauthorizedTitle}</h1>
+          <p className="text-gray-500 font-bold mb-10 text-lg leading-relaxed">
+            {(t as any).notAuthorized}
+          </p>
+          <div className="p-4 bg-gray-50 rounded-2xl mb-8 border border-gray-100">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">מחובר כיום:</p>
+            <p className="text-sm font-black text-gray-700">{user.email}</p>
+          </div>
+          <button 
+            onClick={logout}
+            className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black hover:bg-black transition-all active:scale-95 shadow-xl"
+          >
+            {lang === 'he' ? 'התנתק ונסה חשבון אחר' : lang === 'ru' ? 'Выйти и попробовать другой аккаунт' : 'تسجيل الخروج وتجربة حساب آخر'}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

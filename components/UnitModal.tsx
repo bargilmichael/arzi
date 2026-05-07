@@ -410,10 +410,10 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
                       </div>
                       <div className="flex gap-4">
                         {canEdit && (
-                          <>
+                          <div className="flex gap-4 flex-1">
                             <button onClick={() => handleQuickStatusUpdate(task.id, TaskStatus.DONE)} className="flex-1 bg-green-600 text-white py-4 rounded-2xl font-black text-sm shadow-xl hover:bg-green-700 active:scale-95 transition-all flex items-center justify-center gap-2">✅ {t.finishWorkAction}</button>
-                            <button onClick={() => handleQuickStatusUpdate(task.id, TaskStatus.NEEDS_FOLLOWUP)} className="flex-1 bg-yellow-500 text-white py-4 rounded-2xl font-black text-sm shadow-xl hover:bg-yellow-600 active:scale-95 transition-all">🔄 {t.needsFollowup}</button>
-                          </>
+                            {isAdmin && <button onClick={() => handleQuickStatusUpdate(task.id, TaskStatus.NEEDS_FOLLOWUP)} className="flex-1 bg-yellow-500 text-white py-4 rounded-2xl font-black text-sm shadow-xl hover:bg-yellow-600 active:scale-95 transition-all">🔄 {t.needsFollowup}</button>}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -554,38 +554,40 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
                 </div>
               )}
 
-              <section className="bg-yellow-50/40 p-8 rounded-[2.5rem] border-2 border-yellow-100/60 shadow-inner">
-                <h4 className="text-xs font-black text-yellow-800 mb-8 uppercase tracking-[0.2em] flex items-center gap-4"><span className="bg-yellow-100 p-3 rounded-2xl">📅</span> {t.scheduleTitle}</h4>
-                <form onSubmit={handleAppSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.dateLabel}</label>
-                    <input type="date" value={appDate} onChange={e => setAppDate(e.target.value)} disabled={!canEdit} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none transition-all font-black bg-white shadow-sm disabled:opacity-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.timeLabel}</label>
-                    <input type="time" value={appTime} onChange={e => setAppTime(e.target.value)} disabled={!canEdit} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none transition-all font-black bg-white shadow-sm disabled:opacity-50" />
-                  </div>
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.contractorLabel}</label>
-                    <select value={appContractor} onChange={e => setAppContractor(e.target.value)} disabled={!canEdit} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none bg-white font-black shadow-sm disabled:opacity-50">
-                      {CONTRACTORS.map(c => <option key={c.id} value={c.id}>{c.icon} {(t as any)[c.labelKey]}</option>)}
-                    </select>
-                  </div>
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.tenantLabel}</label>
-                    <input type="text" value={appTenant} onChange={e => setAppTenant(e.target.value)} disabled={!canEdit} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none font-black shadow-sm bg-white disabled:opacity-50" placeholder="שם מלא / טלפון" />
-                  </div>
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{(t as any).emailLabel}</label>
-                    <input type="email" value={appEmail} onChange={e => setAppEmail(e.target.value)} disabled={!canEdit} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none font-black shadow-sm bg-white disabled:opacity-50" placeholder="example@email.com" />
-                  </div>
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.notesLabel}</label>
-                    <textarea value={appNotes} onChange={e => setAppNotes(e.target.value)} disabled={!canEdit} rows={2} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none resize-none font-bold bg-white shadow-sm disabled:opacity-50" />
-                  </div>
-                  {isAdmin && <button type="submit" className="md:col-span-2 bg-yellow-500 text-white font-black py-6 rounded-3xl hover:bg-yellow-600 transition-all shadow-xl active:scale-95 text-lg">{t.addAppointment}</button>}
-                </form>
-              </section>
+              {isAdmin && (
+                <section className="bg-yellow-50/40 p-8 rounded-[2.5rem] border-2 border-yellow-100/60 shadow-inner">
+                  <h4 className="text-xs font-black text-yellow-800 mb-8 uppercase tracking-[0.2em] flex items-center gap-4"><span className="bg-yellow-100 p-3 rounded-2xl">📅</span> {t.scheduleTitle}</h4>
+                  <form onSubmit={handleAppSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.dateLabel}</label>
+                      <input type="date" value={appDate} onChange={e => setAppDate(e.target.value)} disabled={!canEdit} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none transition-all font-black bg-white shadow-sm disabled:opacity-50" />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.timeLabel}</label>
+                      <input type="time" value={appTime} onChange={e => setAppTime(e.target.value)} disabled={!canEdit} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none transition-all font-black bg-white shadow-sm disabled:opacity-50" />
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.contractorLabel}</label>
+                      <select value={appContractor} onChange={e => setAppContractor(e.target.value)} disabled={!canEdit} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none bg-white font-black shadow-sm disabled:opacity-50">
+                        {CONTRACTORS.map(c => <option key={c.id} value={c.id}>{c.icon} {(t as any)[c.labelKey]}</option>)}
+                      </select>
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.tenantLabel}</label>
+                      <input type="text" value={appTenant} onChange={e => setAppTenant(e.target.value)} disabled={!canEdit} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none font-black shadow-sm bg-white disabled:opacity-50" placeholder="שם מלא / טלפון" />
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{(t as any).emailLabel}</label>
+                      <input type="email" value={appEmail} onChange={e => setAppEmail(e.target.value)} disabled={!canEdit} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none font-black shadow-sm bg-white disabled:opacity-50" placeholder="example@email.com" />
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.notesLabel}</label>
+                      <textarea value={appNotes} onChange={e => setAppNotes(e.target.value)} disabled={!canEdit} rows={2} className="w-full px-5 py-4 rounded-2xl border-2 border-gray-100 focus:border-yellow-400 outline-none resize-none font-bold bg-white shadow-sm disabled:opacity-50" />
+                    </div>
+                    <button type="submit" className="md:col-span-2 bg-yellow-500 text-white font-black py-6 rounded-3xl hover:bg-yellow-600 transition-all shadow-xl active:scale-95 text-lg">{t.addAppointment}</button>
+                  </form>
+                </section>
+              )}
             </div>
           )}
 
@@ -677,7 +679,12 @@ const UnitModal: React.FC<Props> = ({ unit, onClose, onSave, lang, activeDiscipl
                   </div>
                   <div className="space-y-3">
                     <label className="text-[11px] font-black text-gray-400 uppercase px-1 tracking-widest">{t.currentStatus}</label>
-                    <select value={status} onChange={e => setStatus(e.target.value as TaskStatus)} className="w-full px-6 py-5 rounded-2xl border-2 border-gray-100 focus:border-blue-500 outline-none bg-white font-black shadow-sm text-lg">
+                    <select 
+                      value={status} 
+                      onChange={e => setStatus(e.target.value as TaskStatus)} 
+                      disabled={userRole === 'contractor'}
+                      className="w-full px-6 py-5 rounded-2xl border-2 border-gray-100 focus:border-blue-500 outline-none bg-white font-black shadow-sm text-lg disabled:opacity-50"
+                    >
                       {Object.entries(STATUS_CONFIG).map(([s, cfg]) => <option key={s} value={s}>{(t as any)[cfg.labelKey]}</option>)}
                     </select>
                   </div>

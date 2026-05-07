@@ -137,7 +137,9 @@ export const translations = {
     workerNamePlaceholder: "שם העובד החותם",
     workerNameField: "שם העובד המבצע",
     translatingText: "מתרגם טקסט...",
-    waitingForManager: "אין משימות פתוחות לדירה זו. ממתין למנהל עבודה שיפתח משימה."
+    waitingForManager: "אין משימות פתוחות לדירה זו. ממתין למנהל עבודה שיפתח משימה.",
+    notAuthorized: "אינך מורשה לגשת למערכת זו. נא פנה למנהל לקבלת גישה.",
+    unauthorizedTitle: "גישה חסומה"
   },
   ru: {
     appName: "Отдел проверки Arazi HaNegev",
@@ -274,7 +276,9 @@ export const translations = {
     workerNamePlaceholder: "Имя подписавшегося",
     workerNameField: "Имя исполнителя",
     translatingText: "Перевод текста...",
-    waitingForManager: "Для этой квартиры нет открытых задач. Ожидание открытия задачи прорабом."
+    waitingForManager: "Для этой квартиры нет открытых задач. Ожидание открытия задачи прорабом.",
+    notAuthorized: "У вас нет доступа к этой системе. Пожалуйста, обратитесь к администратору.",
+    unauthorizedTitle: "Доступ заблокирован"
   },
   ar: {
     appName: "قسم فحص أرازي النقب",
@@ -411,6 +415,8 @@ export const translations = {
     workerNamePlaceholder: "اسم العامل الموقع",
     workerNameField: "اسم العامل المنفذ",
     translatingText: "جاري ترجمة النص...",
-    waitingForManager: "لا توجد مهام مفتوحة لهذه الشقة. بانتظار مدير العمل لفتح مهمة."
+    waitingForManager: "لا توجد مهام مفتوحة لهذه الشقة. بانتظار مدير العمل لفتح مهمة.",
+    notAuthorized: "ليس لديك صلاحية للدخول إلى هذا النظام. يرجى مراجعة المسؤول.",
+    unauthorizedTitle: "تم حظر الدخول"
   }
 };
